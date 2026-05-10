@@ -959,6 +959,9 @@
   </div>
 </main>
 
+<!-- Fallback input for iOS / unsupported browsers -->
+<input type="file" id="file-fallback" multiple accept=".txt" style="display: none;" onchange="handleFallbackFiles(event)">
+
 <script>
   // ════════════════════════════════════════
   // STATE
@@ -1017,27 +1020,56 @@
   }
 
   // ════════════════════════════════════════
-  // FOLDER PICKER
+  // FOLDER PICKER / FILE FALLBACK
   // ════════════════════════════════════════
   async function selectFolder() {
-    try {
-      const dirHandle = await window.showDirectoryPicker();
-      const newBooks = [];
-      for await (const entry of dirHandle.values()) {
-        if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.txt')) {
-          const file = await entry.getFile();
-          const text = await file.text();
-          newBooks.push({ ...parseMetadata(text, entry.name), content: text });
+    // 1. Check if the modern Folder API is supported (Laptops/Desktops)
+    if (window.showDirectoryPicker) {
+      try {
+        const dirHandle = await window.showDirectoryPicker();
+        const newBooks = [];
+        for await (const entry of dirHandle.values()) {
+          if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.txt')) {
+            const file = await entry.getFile();
+            const text = await file.text();
+            newBooks.push({ ...parseMetadata(text, entry.name), content: text });
+          }
         }
+        library = newBooks;
+        renderList();
+        if (library.length > 0) {
+          showToast(`Loaded ${library.length} book${library.length > 1 ? 's' : ''}`);
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') console.warn('Folder error:', err);
       }
-      library = newBooks;
-      renderList();
-      if (library.length > 0) {
-        showToast(`Loaded ${library.length} book${library.length > 1 ? 's' : ''}`);
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') console.warn('Folder error:', err);
+    } else {
+      // 2. Fallback for iPhones/iOS (triggers the hidden input)
+      document.getElementById('file-fallback').click();
     }
+  }
+
+  // Processes files selected from the iOS fallback menu
+  async function handleFallbackFiles(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const newBooks = [];
+    for (const file of files) {
+      if (file.name.toLowerCase().endsWith('.txt')) {
+        const text = await file.text(); 
+        newBooks.push({ ...parseMetadata(text, file.name), content: text });
+      }
+    }
+
+    library = newBooks;
+    renderList();
+    if (library.length > 0) {
+      showToast(`Loaded ${library.length} book${library.length > 1 ? 's' : ''}`);
+    }
+    
+    // Clear the input so you can select the exact same files again later if needed
+    event.target.value = '';
   }
 
   function parseMetadata(text, fileName) {
