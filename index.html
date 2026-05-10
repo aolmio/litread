@@ -37,12 +37,17 @@
       --radius: 12px;
       --radius-sm: 8px;
       --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+      
+      /* Typography defaults */
       --font-ui: 'Outfit', system-ui, sans-serif;
       --font-reader: 'Crimson Pro', Georgia, serif;
       --font-mono: 'JetBrains Mono', monospace;
       --font-size: 1.2rem;
       --line-height: 1.85;
+      --word-spacing: 0px;
+      --letter-spacing: 0px;
       --reading-width: 680px;
+      
       --progress-bar-h: 3px;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
@@ -131,7 +136,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Progress bar at top */
+    /* Progress indicators */
     #reading-progress {
       position: fixed;
       top: 0; left: 0;
@@ -141,6 +146,30 @@
       z-index: 9999;
       transition: width 0.1s linear;
       border-radius: 0 2px 2px 0;
+    }
+
+    #progress-pill {
+      position: fixed;
+      bottom: calc(20px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface);
+      color: var(--heading);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      font-family: var(--font-ui);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      z-index: 250;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    #progress-pill.show { 
+      opacity: 1; 
+      transform: translateX(-50%) translateY(0);
     }
 
     /* Scrollbar */
@@ -281,6 +310,10 @@
       transform: translateY(-1px);
       box-shadow: var(--shadow-md);
     }
+    .toolbar-btn.icon-only {
+      flex: 0 0 auto;
+      padding: 9px;
+    }
 
     /* Settings panel */
     .settings-panel {
@@ -289,6 +322,8 @@
       padding: 14px;
       margin-bottom: 12px;
       display: none;
+      max-height: 50vh;
+      overflow-y: auto;
     }
     .settings-panel.open { display: block; }
 
@@ -296,7 +331,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .settings-row:last-child { margin-bottom: 0; }
     .settings-row.full { grid-template-columns: 1fr; }
@@ -352,27 +387,6 @@
     .swatch[data-theme="theme-sepia"]{ background: linear-gradient(135deg, #fdf8f0 50%, #b45309 50%); }
     .swatch[data-theme="theme-forest"]{ background: linear-gradient(135deg, #1a1f16 50%, #6dbe45 50%); }
     .swatch[data-theme="theme-midnight"]{ background: linear-gradient(135deg, #060915 50%, #5e8af7 50%); }
-
-    /* Slider */
-    .slider-wrap { position: relative; }
-    input[type="range"] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-      box-shadow: var(--shadow-sm);
-    }
 
     /* Sidebar divider */
     .sidebar-div {
@@ -460,7 +474,6 @@
       font-size: 0.88rem;
     }
 
-    /* Library count */
     .lib-stat {
       font-size: 0.72rem;
       color: var(--text-dim);
@@ -539,9 +552,20 @@
       font-family: var(--font-reader);
       font-size: var(--font-size);
       line-height: var(--line-height);
+      letter-spacing: var(--letter-spacing);
+      word-spacing: var(--word-spacing);
       color: var(--text);
       white-space: pre-wrap;
       animation: fadeUp 0.4s ease both;
+    }
+
+    /* Bionic Reading Styles */
+    #book-body.bionic-active {
+      color: var(--text-dim);
+    }
+    b.bio {
+      font-weight: 700;
+      color: var(--heading);
     }
 
     @keyframes fadeUp {
@@ -639,7 +663,7 @@
     #fab:hover { background: var(--accent-hover); transform: scale(1.05); box-shadow: var(--shadow-lg); }
 
     /* ════════════════════════════════════════
-       INSTALL BANNER
+       INSTALL BANNER & TOAST
     ════════════════════════════════════════ */
     #install-banner {
       display: none;
@@ -656,7 +680,6 @@
       z-index: 500;
       animation: slideUp 0.3s ease;
     }
-
     #install-banner.show { display: flex; align-items: center; gap: 12px; }
 
     @keyframes slideUp {
@@ -688,9 +711,6 @@
       line-height: 1;
     }
 
-    /* ════════════════════════════════════════
-       TOAST NOTIFICATIONS
-    ════════════════════════════════════════ */
     #toast {
       position: fixed;
       top: 20px; left: 50%;
@@ -773,21 +793,19 @@
         height: 100dvh;
         box-shadow: 4px 0 30px rgba(0,0,0,0.2);
       }
-
       .reader-inner {
         padding: 48px 20px 100px;
       }
-
       #fab { bottom: calc(20px + var(--safe-bottom)); left: 20px; }
-
       .book-header h1 { font-size: 1.7rem; }
     }
   </style>
 </head>
 <body class="theme-sepia">
 
-<!-- Reading progress bar -->
+<!-- Progress Indicators -->
 <div id="reading-progress"></div>
+<div id="progress-pill">0%</div>
 
 <!-- Toast notification -->
 <div id="toast"></div>
@@ -803,6 +821,7 @@
       <li><span class="desc">Toggle sidebar</span><span class="shortcut-keys"><kbd>B</kbd></span></li>
       <li><span class="desc">Open folder</span><span class="shortcut-keys"><kbd>O</kbd></span></li>
       <li><span class="desc">Search books</span><span class="shortcut-keys"><kbd>/</kbd></span></li>
+      <li><span class="desc">Full screen</span><span class="shortcut-keys"><kbd>F</kbd></span></li>
       <li><span class="desc">Font size up</span><span class="shortcut-keys"><kbd>+</kbd></span></li>
       <li><span class="desc">Font size down</span><span class="shortcut-keys"><kbd>−</kbd></span></li>
       <li><span class="desc">Scroll down</span><span class="shortcut-keys"><kbd>Space</kbd></span></li>
@@ -855,21 +874,34 @@
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <select id="sort-select" onchange="renderList()" title="Group by" style="flex:1">
-        <option value="author">By Author</option>
-        <option value="title">By Title</option>
-      </select>
       <button class="toolbar-btn primary" onclick="selectFolder()" title="Open folder (O)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         Open
       </button>
-      <button class="toolbar-btn" onclick="toggleSettings()" title="Settings" id="settings-btn">
+      <button class="toolbar-btn icon-only" onclick="toggleFullScreen()" title="Full Screen (F)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn icon-only" onclick="toggleSettings()" title="Settings" id="settings-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
 
+    <div class="settings-row" style="margin-bottom: 12px;">
+      <select id="sort-select" onchange="renderList()" title="Group by" style="width: 100%;">
+        <option value="author">Group By Author</option>
+        <option value="title">Group By Title</option>
+      </select>
+    </div>
+
     <!-- Settings panel -->
     <div class="settings-panel" id="settings-panel">
+      <div class="settings-row full">
+        <button id="bionic-btn" class="toolbar-btn" onclick="toggleBionic()">
+          Enable Bionic Reading
+        </button>
+      </div>
 
       <div class="settings-row">
         <div>
@@ -884,7 +916,7 @@
         </div>
         <div>
           <div class="setting-label">Font</div>
-          <select onchange="setFont(this.value)">
+          <select id="font-select" onchange="setFont(this.value)">
             <option value="'Crimson Pro', Georgia, serif">Serif</option>
             <option value="'Outfit', system-ui, sans-serif">Sans</option>
             <option value="'JetBrains Mono', monospace">Mono</option>
@@ -905,7 +937,7 @@
         </div>
         <div>
           <div class="setting-label">Line Height</div>
-          <select onchange="setLineHeight(this.value)">
+          <select id="line-select" onchange="setLineHeight(this.value)">
             <option value="1.5">Compact</option>
             <option value="1.7">Normal</option>
             <option value="1.85" selected>Relaxed</option>
@@ -914,10 +946,30 @@
         </div>
       </div>
 
+      <!-- New Typography Controls -->
+      <div class="settings-row">
+        <div>
+          <div class="setting-label">Letter Spacing</div>
+          <select id="letter-select" onchange="setLetterSpacing(this.value)">
+            <option value="0px">Normal</option>
+            <option value="0.03em">Loose</option>
+            <option value="0.08em">Wide</option>
+          </select>
+        </div>
+        <div>
+          <div class="setting-label">Word Spacing</div>
+          <select id="word-select" onchange="setWordSpacing(this.value)">
+            <option value="0px">Normal</option>
+            <option value="0.15em">Loose</option>
+            <option value="0.3em">Wide</option>
+          </select>
+        </div>
+      </div>
+
       <div class="settings-row">
         <div>
           <div class="setting-label">Reading Width</div>
-          <select onchange="setWidth(this.value)">
+          <select id="width-select" onchange="setWidth(this.value)">
             <option value="560px">Narrow</option>
             <option value="680px" selected>Normal</option>
             <option value="800px">Wide</option>
@@ -971,7 +1023,7 @@
   let deferredInstall = null;
   let settings = {};
 
-  const STORAGE_KEY = 'txtreader_v1';
+  const STORAGE_KEY = 'txtreader_v2';
 
   // ════════════════════════════════════════
   // PERSIST SETTINGS & PROGRESS
@@ -996,6 +1048,11 @@
     if (!settings.lineHeight) settings.lineHeight = '1.85';
     if (!settings.width) settings.width = '680px';
     if (!settings.sort) settings.sort = 'author';
+    
+    // New Settings
+    if (!settings.letterSpacing) settings.letterSpacing = '0px';
+    if (!settings.wordSpacing) settings.wordSpacing = '0px';
+    if (settings.bionic === undefined) settings.bionic = false;
 
     // Apply
     document.body.className = settings.theme;
@@ -1003,27 +1060,31 @@
     document.documentElement.style.setProperty('--font-size', settings.size);
     document.documentElement.style.setProperty('--line-height', settings.lineHeight);
     document.documentElement.style.setProperty('--reading-width', settings.width);
+    document.documentElement.style.setProperty('--letter-spacing', settings.letterSpacing);
+    document.documentElement.style.setProperty('--word-spacing', settings.wordSpacing);
 
     // Sync selects
-    const sortSel = document.getElementById('sort-select');
-    if (sortSel) sortSel.value = settings.sort;
+    const mapSelect = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    mapSelect('sort-select', settings.sort);
+    mapSelect('size-select', settings.size);
+    mapSelect('font-select', settings.font);
+    mapSelect('line-select', settings.lineHeight);
+    mapSelect('width-select', settings.width);
+    mapSelect('letter-select', settings.letterSpacing);
+    mapSelect('word-select', settings.wordSpacing);
 
-    const sizeSel = document.getElementById('size-select');
-    if (sizeSel) sizeSel.value = settings.size;
-
-    // Sync swatch
+    // Sync swatches & buttons
     document.querySelectorAll('.swatch').forEach(s => {
       s.classList.toggle('active', s.dataset.theme === settings.theme);
     });
-
     updateThemeColor();
+    updateBionicBtn();
   }
 
   // ════════════════════════════════════════
   // FOLDER PICKER / FILE FALLBACK
   // ════════════════════════════════════════
   async function selectFolder() {
-    // 1. Check if the modern Folder API is supported (Laptops/Desktops)
     if (window.showDirectoryPicker) {
       try {
         const dirHandle = await window.showDirectoryPicker();
@@ -1037,19 +1098,15 @@
         }
         library = newBooks;
         renderList();
-        if (library.length > 0) {
-          showToast(`Loaded ${library.length} book${library.length > 1 ? 's' : ''}`);
-        }
+        if (library.length > 0) showToast(`Loaded ${library.length} book${library.length > 1 ? 's' : ''}`);
       } catch (err) {
         if (err.name !== 'AbortError') console.warn('Folder error:', err);
       }
     } else {
-      // 2. Fallback for iPhones/iOS (triggers the hidden input)
       document.getElementById('file-fallback').click();
     }
   }
 
-  // Processes files selected from the iOS fallback menu
   async function handleFallbackFiles(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -1061,14 +1118,9 @@
         newBooks.push({ ...parseMetadata(text, file.name), content: text });
       }
     }
-
     library = newBooks;
     renderList();
-    if (library.length > 0) {
-      showToast(`Loaded ${library.length} book${library.length > 1 ? 's' : ''}`);
-    }
-    
-    // Clear the input so you can select the exact same files again later if needed
+    if (library.length > 0) showToast(`Loaded ${library.length} book${library.length > 1 ? 's' : ''}`);
     event.target.value = '';
   }
 
@@ -1139,7 +1191,7 @@
   }
 
   // ════════════════════════════════════════
-  // DISPLAY BOOK
+  // DISPLAY BOOK & BIONIC READING
   // ════════════════════════════════════════
   function displayBook(book) {
     currentBook = book;
@@ -1168,14 +1220,18 @@
           </span>
         </div>
       </div>
-      <div id="book-body">${body}</div>
+      <div id="book-body" class="${settings.bionic ? 'bionic-active' : ''}">${body}</div>
     `;
+
+    // Apply Bionic Mode via DOM traversal to protect HTML tags
+    if (settings.bionic) {
+      applyBionicToDOM(document.getElementById('book-body'));
+    }
 
     const reader = document.getElementById('reader');
     reader.scrollTop = 0;
     updateProgress();
 
-    // Restore scroll position if saved
     const saved = settings.progress[book.title];
     if (saved && saved > 0) {
       const target = (reader.scrollHeight - reader.clientHeight) * (saved / 100);
@@ -1185,33 +1241,92 @@
     if (window.innerWidth < 768) toggleSidebar(false);
   }
 
+  function applyBionicToDOM(element) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+    const nodes = [];
+    let node;
+    while(node = walker.nextNode()) nodes.push(node);
+    
+    nodes.forEach(n => {
+      const text = n.nodeValue;
+      if (!text.trim()) return;
+      const span = document.createElement('span');
+      // Bolds the first half of every word consisting of letters/numbers
+      span.innerHTML = text.replace(/([a-zA-ZÀ-ÿ0-9]+)/g, (match, word) => {
+        if (word.length === 1) return `<b class="bio">${word}</b>`;
+        const mid = Math.ceil(word.length / 2);
+        return `<b class="bio">${word.substring(0, mid)}</b>${word.substring(mid)}`;
+      });
+      n.replaceWith(...span.childNodes);
+    });
+  }
+
+  function toggleBionic() {
+    settings.bionic = !settings.bionic;
+    saveState();
+    updateBionicBtn();
+    if (currentBook) {
+      const scrollPos = document.getElementById('reader').scrollTop;
+      displayBook(currentBook);
+      document.getElementById('reader').scrollTop = scrollPos; // Maintain scroll
+    }
+  }
+
+  function updateBionicBtn() {
+    const btn = document.getElementById('bionic-btn');
+    if (btn) {
+      btn.textContent = settings.bionic ? "Disable Bionic Reading" : "Enable Bionic Reading";
+      btn.classList.toggle('primary', settings.bionic);
+    }
+  }
+
   function esc(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   // ════════════════════════════════════════
-  // READING PROGRESS
+  // READING PROGRESS & FULL SCREEN
   // ════════════════════════════════════════
+  let pillTimer;
   function updateProgress() {
     const reader = document.getElementById('reader');
     const bar = document.getElementById('reading-progress');
+    const pill = document.getElementById('progress-pill');
+    
     const scrollable = reader.scrollHeight - reader.clientHeight;
     const pct = scrollable > 0 ? Math.round((reader.scrollTop / scrollable) * 100) : 0;
+    
     bar.style.width = pct + '%';
 
     if (currentBook) {
       settings.progress[currentBook.title] = pct;
       saveState();
-      // Update badge in list
+      
       const badges = document.querySelectorAll('.book-item.active .book-progress-badge');
       badges.forEach(b => { b.textContent = pct + '%'; });
+
+      // Show floating pill
+      pill.textContent = pct + '%';
+      pill.classList.add('show');
+      clearTimeout(pillTimer);
+      pillTimer = setTimeout(() => pill.classList.remove('show'), 1500);
     }
   }
 
   document.getElementById('reader').addEventListener('scroll', updateProgress, { passive: true });
 
+  function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        showToast(`Fullscreen error: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  }
+
   // ════════════════════════════════════════
-  // SIDEBAR
+  // SIDEBAR & SETTINGS
   // ════════════════════════════════════════
   function toggleSidebar(state) {
     const sidebar = document.getElementById('sidebar');
@@ -1228,9 +1343,6 @@
     }
   }
 
-  // ════════════════════════════════════════
-  // SETTINGS PANEL
-  // ════════════════════════════════════════
   function toggleSettings() {
     document.getElementById('settings-panel').classList.toggle('open');
   }
@@ -1247,42 +1359,22 @@
 
   function updateThemeColor() {
     const colors = {
-      default: '#4f46e5',
-      'theme-dark': '#0d1117',
-      'theme-sepia': '#b45309',
-      'theme-forest': '#1a1f16',
-      'theme-midnight': '#060915'
+      default: '#4f46e5', 'theme-dark': '#0d1117', 'theme-sepia': '#b45309',
+      'theme-forest': '#1a1f16', 'theme-midnight': '#060915'
     };
     const meta = document.getElementById('meta-theme');
     if (meta) meta.content = colors[settings.theme] || '#4f46e5';
   }
 
-  function setFont(val) {
-    document.documentElement.style.setProperty('--font-reader', val);
-    settings.font = val;
-    saveState();
-  }
-
-  function setSize(val) {
-    document.documentElement.style.setProperty('--font-size', val);
-    settings.size = val;
-    saveState();
-  }
-
-  function setLineHeight(val) {
-    document.documentElement.style.setProperty('--line-height', val);
-    settings.lineHeight = val;
-    saveState();
-  }
-
-  function setWidth(val) {
-    document.documentElement.style.setProperty('--reading-width', val);
-    settings.width = val;
-    saveState();
-  }
+  function setFont(val) { document.documentElement.style.setProperty('--font-reader', val); settings.font = val; saveState(); }
+  function setSize(val) { document.documentElement.style.setProperty('--font-size', val); settings.size = val; saveState(); }
+  function setLineHeight(val) { document.documentElement.style.setProperty('--line-height', val); settings.lineHeight = val; saveState(); }
+  function setWidth(val) { document.documentElement.style.setProperty('--reading-width', val); settings.width = val; saveState(); }
+  function setLetterSpacing(val) { document.documentElement.style.setProperty('--letter-spacing', val); settings.letterSpacing = val; saveState(); }
+  function setWordSpacing(val) { document.documentElement.style.setProperty('--word-spacing', val); settings.wordSpacing = val; saveState(); }
 
   // ════════════════════════════════════════
-  // SEARCH
+  // SEARCH & SHORTCUTS
   // ════════════════════════════════════════
   function onSearch(input) {
     document.getElementById('search-clear').style.display = input.value ? 'block' : 'none';
@@ -1297,9 +1389,6 @@
     renderList();
   }
 
-  // ════════════════════════════════════════
-  // KEYBOARD SHORTCUTS
-  // ════════════════════════════════════════
   document.addEventListener('keydown', e => {
     const inInput = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT';
 
@@ -1307,18 +1396,12 @@
     if (e.key === 'Escape') { closeHelp(); return; }
     if (inInput) return;
 
-    if (e.key === 'b' || e.key === 'B') { toggleSidebar(); }
-    if (e.key === 'o' || e.key === 'O') { selectFolder(); }
-    if (e.key === '/') {
-      e.preventDefault();
-      document.getElementById('search').focus();
-    }
-    if (e.key === '+' || e.key === '=') {
-      changeSizeStep(1);
-    }
-    if (e.key === '-') {
-      changeSizeStep(-1);
-    }
+    if (e.key === 'b' || e.key === 'B') toggleSidebar();
+    if (e.key === 'o' || e.key === 'O') selectFolder();
+    if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullScreen(); }
+    if (e.key === '/') { e.preventDefault(); document.getElementById('search').focus(); }
+    if (e.key === '+' || e.key === '=') changeSizeStep(1);
+    if (e.key === '-') changeSizeStep(-1);
   });
 
   function changeSizeStep(dir) {
@@ -1338,7 +1421,7 @@
   });
 
   // ════════════════════════════════════════
-  // TOAST
+  // MISC (TOAST, PWA)
   // ════════════════════════════════════════
   let toastTimer;
   function showToast(msg) {
@@ -1349,9 +1432,6 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
   }
 
-  // ════════════════════════════════════════
-  // PWA / SERVICE WORKER
-  // ════════════════════════════════════════
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
@@ -1366,10 +1446,7 @@
   function installPWA() {
     if (!deferredInstall) return;
     deferredInstall.prompt();
-    deferredInstall.userChoice.then(() => {
-      deferredInstall = null;
-      dismissInstall();
-    });
+    deferredInstall.userChoice.then(() => { deferredInstall = null; dismissInstall(); });
   }
 
   function dismissInstall() {
@@ -1381,9 +1458,7 @@
     dismissInstall();
   });
 
-  // ════════════════════════════════════════
   // INIT
-  // ════════════════════════════════════════
   initSettings();
 </script>
 </body>
