@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#b45309" id="meta-theme">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="TXT Reader">
+  <meta name="description" content="A beautiful reader for your .txt library">
+  <title>TXT Reader Pro</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%23b45309'/><path d='M48 40h96a16 16 0 0 1 16 16v80a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16V56a16 16 0 0 1 16-16z' fill='%23fef3c7'/><rect x='60' y='72' width='72' height='8' rx='4' fill='%23b45309'/><rect x='60' y='90' width='72' height='8' rx='4' fill='%23b45309'/><rect x='60' y='108' width='48' height='8' rx='4' fill='%23b45309'/></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    /* ════════════════════════════════════════
+       DESIGN TOKENS
+    ════════════════════════════════════════ */
+    :root {
+      /* Light */
+      --bg: #ffffff;
+      --surface: #f4f6f9;
+      --surface2: #eaecf1;
+      --text: #374151;
+      --text-dim: #9ca3af;
+      --heading: #111827;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-dim: rgba(79,70,229,0.12);
+      --border: #e5e7eb;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+      --reader-bg: #ffffff;
+      --sidebar-w: 320px;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+      --font-ui: 'Outfit', system-ui, sans-serif;
+      --font-reader: 'Crimson Pro', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-size: 1.2rem;
+      --line-height: 1.85;
+      --reading-width: 680px;
+      --progress-bar-h: 3px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* DARK */
+    .theme-dark {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --text: #b0b8c4;
+      --text-dim: #586069;
+      --heading: #f0f6fc;
+      --accent: #7c72fa;
+      --accent-hover: #a89ff9;
+      --accent-dim: rgba(124,114,250,0.15);
+      --border: #2d333b;
+      --reader-bg: #0d1117;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+    }
+
+    /* SEPIA */
+    .theme-sepia {
+      --bg: #fdf8f0;
+      --surface: #f5ede0;
+      --surface2: #ecddd0;
+      --text: #5c4a32;
+      --text-dim: #a08060;
+      --heading: #2d1f0e;
+      --accent: #b45309;
+      --accent-hover: #92400e;
+      --accent-dim: rgba(180,83,9,0.12);
+      --border: #ddd0be;
+      --reader-bg: #fdf8f0;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    /* FOREST */
+    .theme-forest {
+      --bg: #1a1f16;
+      --surface: #222a1c;
+      --surface2: #2a3423;
+      --text: #a8bb96;
+      --text-dim: #6a7d5e;
+      --heading: #d4e8c4;
+      --accent: #6dbe45;
+      --accent-hover: #89d462;
+      --accent-dim: rgba(109,190,69,0.15);
+      --border: #344028;
+      --reader-bg: #1a1f16;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    /* MIDNIGHT */
+    .theme-midnight {
+      --bg: #060915;
+      --surface: #0d1226;
+      --surface2: #141a33;
+      --text: #9aa5ce;
+      --text-dim: #4a5680;
+      --heading: #c5cfe8;
+      --accent: #5e8af7;
+      --accent-hover: #7fa4ff;
+      --accent-dim: rgba(94,138,247,0.15);
+      --border: #1e2748;
+      --reader-bg: #060915;
+    }
+
+    /* ════════════════════════════════════════
+       RESET & BASE
+    ════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font-ui);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100dvh;
+      overflow: hidden;
+      transition: background var(--transition), color var(--transition);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Progress bar at top */
+    #reading-progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: var(--progress-bar-h);
+      width: 0%;
+      background: var(--accent);
+      z-index: 9999;
+      transition: width 0.1s linear;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* ════════════════════════════════════════
+       SIDEBAR
+    ════════════════════════════════════════ */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      transition: margin var(--transition);
+      z-index: 200;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    #sidebar.hidden {
+      margin-left: calc(var(--sidebar-w) * -1);
+    }
+
+    .sidebar-top {
+      padding: 20px 20px 0;
+      flex-shrink: 0;
+    }
+
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--heading);
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    /* Search */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 11px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+    .search-clear {
+      position: absolute;
+      right: 10px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: none;
+      line-height: 1;
+    }
+    .search-clear:hover { color: var(--text); }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 32px 10px 36px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--heading);
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    /* Toolbar row */
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .toolbar-btn {
+      flex: 1;
+      padding: 9px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-btn.primary {
+      background: var(--accent);
+      color: white;
+      border-color: transparent;
+    }
+    .toolbar-btn.primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Settings panel */
+    .settings-panel {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .settings-panel.open { display: block; }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .settings-row:last-child { margin-bottom: 0; }
+    .settings-row.full { grid-template-columns: 1fr; }
+
+    .setting-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--heading);
+      font-family: var(--font-ui);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+    select:focus { border-color: var(--accent); }
+
+    /* Theme swatches */
+    .theme-swatches {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.1); }
+    .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+    .swatch[data-theme="default"]    { background: linear-gradient(135deg, #fff 50%, #4f46e5 50%); }
+    .swatch[data-theme="theme-dark"] { background: linear-gradient(135deg, #0d1117 50%, #7c72fa 50%); }
+    .swatch[data-theme="theme-sepia"]{ background: linear-gradient(135deg, #fdf8f0 50%, #b45309 50%); }
+    .swatch[data-theme="theme-forest"]{ background: linear-gradient(135deg, #1a1f16 50%, #6dbe45 50%); }
+    .swatch[data-theme="theme-midnight"]{ background: linear-gradient(135deg, #060915 50%, #5e8af7 50%); }
+
+    /* Slider */
+    .slider-wrap { position: relative; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Sidebar divider */
+    .sidebar-div {
+      height: 1px;
+      background: var(--border);
+      margin: 0 0 12px 0;
+    }
+
+    /* Sidebar book list */
+    .sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px 20px;
+    }
+
+    #book-list { list-style: none; padding: 0; margin: 0; }
+
+    .group-header {
+      padding: 14px 0 6px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .book-item {
+      padding: 11px 13px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: 1px solid transparent;
+      margin-bottom: 3px;
+      transition: all 0.18s;
+    }
+    .book-item:hover { background: var(--surface2); }
+    .book-item.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+
+    .book-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--heading);
+      display: block;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .book-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .book-author {
+      font-size: 0.77rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .book-progress-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border-radius: 10px;
+      padding: 1px 7px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 30px 0;
+      color: var(--text-dim);
+      font-size: 0.88rem;
+    }
+
+    /* Library count */
+    .lib-stat {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    /* ════════════════════════════════════════
+       MAIN READER AREA
+    ════════════════════════════════════════ */
+    #reader {
+      flex: 1;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      background: var(--reader-bg);
+      transition: background var(--transition);
+      padding: 0;
+    }
+
+    .reader-inner {
+      max-width: var(--reading-width);
+      margin: 0 auto;
+      padding: 64px 40px 120px;
+    }
+
+    /* ════════════════════════════════════════
+       BOOK TYPOGRAPHY
+    ════════════════════════════════════════ */
+    .book-header {
+      text-align: center;
+      margin-bottom: 56px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .book-header h1 {
+      font-family: var(--font-reader);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 600;
+      color: var(--heading);
+      margin: 0 0 10px 0;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    .book-header .byline {
+      font-family: var(--font-reader);
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      margin: 0 0 20px 0;
+    }
+
+    .book-stats {
+      display: inline-flex;
+      gap: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 8px 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      font-family: var(--font-ui);
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-item svg { opacity: 0.6; }
+
+    #book-body {
+      font-family: var(--font-reader);
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      color: var(--text);
+      white-space: pre-wrap;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .chapter-head {
+      display: block;
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      text-align: center;
+      margin: 56px 0 28px;
+      padding: 20px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 70vh;
+      text-align: center;
+      color: var(--text-dim);
+      padding: 40px;
+      gap: 16px;
+    }
+
+    .empty-icon {
+      width: 80px; height: 80px;
+      background: var(--surface);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px dashed var(--border);
+    }
+
+    .empty-state h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--heading);
+      margin: 0;
+      font-family: var(--font-ui);
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 0.9rem;
+      max-width: 280px;
+      line-height: 1.6;
+    }
+
+    .empty-kbd {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 3px 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--text);
+    }
+
+    /* ════════════════════════════════════════
+       FAB (MENU TOGGLE)
+    ════════════════════════════════════════ */
+    #fab {
+      position: fixed;
+      bottom: calc(28px + var(--safe-bottom));
+      left: 28px;
+      z-index: 300;
+      width: 48px; height: 48px;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-md);
+      transition: all 0.2s;
+    }
+    #fab:hover { background: var(--accent-hover); transform: scale(1.05); box-shadow: var(--shadow-lg); }
+
+    /* ════════════════════════════════════════
+       INSTALL BANNER
+    ════════════════════════════════════════ */
+    #install-banner {
+      display: none;
+      position: fixed;
+      bottom: calc(90px + var(--safe-bottom));
+      left: 20px;
+      right: 20px;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow-lg);
+      z-index: 500;
+      animation: slideUp 0.3s ease;
+    }
+
+    #install-banner.show { display: flex; align-items: center; gap: 12px; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .install-text { flex: 1; font-size: 0.85rem; }
+    .install-text strong { display: block; color: var(--heading); margin-bottom: 2px; }
+    .install-text span { color: var(--text-dim); font-size: 0.78rem; }
+
+    .install-btn {
+      padding: 8px 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .install-close {
+      background: none; border: none;
+      color: var(--text-dim); cursor: pointer;
+      padding: 4px; border-radius: 4px;
+      line-height: 1;
+    }
+
+    /* ════════════════════════════════════════
+       TOAST NOTIFICATIONS
+    ════════════════════════════════════════ */
+    #toast {
+      position: fixed;
+      top: 20px; left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: var(--heading);
+      color: var(--bg);
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: var(--font-ui);
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      white-space: nowrap;
+      box-shadow: var(--shadow-lg);
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ════════════════════════════════════════
+       KEYBOARD SHORTCUT HELP
+    ════════════════════════════════════════ */
+    #help-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+    #help-overlay.show { display: flex; }
+
+    .help-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+      animation: fadeUp 0.25s ease;
+    }
+
+    .help-card h3 {
+      margin: 0 0 18px;
+      color: var(--heading);
+      font-size: 1.1rem;
+      font-family: var(--font-ui);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .help-close {
+      background: none; border: none;
+      color: var(--text-dim); cursor: pointer;
+      font-size: 1.2rem; line-height: 1;
+    }
+
+    .shortcut-list { list-style: none; padding: 0; margin: 0; }
+    .shortcut-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.87rem;
+    }
+    .shortcut-list li:last-child { border-bottom: none; }
+    .shortcut-list .desc { color: var(--text); }
+    .shortcut-keys { display: flex; gap: 4px; }
+
+    /* ════════════════════════════════════════
+       MOBILE RESPONSIVE
+    ════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      #sidebar {
+        position: fixed;
+        height: 100dvh;
+        box-shadow: 4px 0 30px rgba(0,0,0,0.2);
+      }
+
+      .reader-inner {
+        padding: 48px 20px 100px;
+      }
+
+      #fab { bottom: calc(20px + var(--safe-bottom)); left: 20px; }
+
+      .book-header h1 { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body class="theme-sepia">
+
+<!-- Reading progress bar -->
+<div id="reading-progress"></div>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<!-- Keyboard help overlay -->
+<div id="help-overlay">
+  <div class="help-card">
+    <h3>
+      Keyboard Shortcuts
+      <button class="help-close" onclick="closeHelp()">✕</button>
+    </h3>
+    <ul class="shortcut-list">
+      <li><span class="desc">Toggle sidebar</span><span class="shortcut-keys"><kbd>B</kbd></span></li>
+      <li><span class="desc">Open folder</span><span class="shortcut-keys"><kbd>O</kbd></span></li>
+      <li><span class="desc">Search books</span><span class="shortcut-keys"><kbd>/</kbd></span></li>
+      <li><span class="desc">Font size up</span><span class="shortcut-keys"><kbd>+</kbd></span></li>
+      <li><span class="desc">Font size down</span><span class="shortcut-keys"><kbd>−</kbd></span></li>
+      <li><span class="desc">Scroll down</span><span class="shortcut-keys"><kbd>Space</kbd></span></li>
+      <li><span class="desc">Top / Bottom</span><span class="shortcut-keys"><kbd>Home</kbd><kbd>End</kbd></span></li>
+      <li><span class="desc">This help</span><span class="shortcut-keys"><kbd>?</kbd></span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- PWA Install banner -->
+<div id="install-banner">
+  <div class="install-icon">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+  </div>
+  <div class="install-text">
+    <strong>Install App</strong>
+    <span>Add to Home Screen for offline use</span>
+  </div>
+  <button class="install-btn" onclick="installPWA()">Install</button>
+  <button class="install-close" onclick="dismissInstall()">✕</button>
+</div>
+
+<!-- FAB toggle -->
+<button id="fab" onclick="toggleSidebar()" aria-label="Toggle sidebar" title="Toggle sidebar (B)">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+    <line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/>
+  </svg>
+</button>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sidebar-top">
+
+    <div class="app-brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <div>
+        <div class="brand-text">TXT Reader Pro</div>
+        <div class="brand-sub">Personal Library</div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search" placeholder="Search books or authors…" oninput="onSearch(this)">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear">✕</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <select id="sort-select" onchange="renderList()" title="Group by" style="flex:1">
+        <option value="author">By Author</option>
+        <option value="title">By Title</option>
+      </select>
+      <button class="toolbar-btn primary" onclick="selectFolder()" title="Open folder (O)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Open
+      </button>
+      <button class="toolbar-btn" onclick="toggleSettings()" title="Settings" id="settings-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+
+    <!-- Settings panel -->
+    <div class="settings-panel" id="settings-panel">
+
+      <div class="settings-row">
+        <div>
+          <div class="setting-label">Theme</div>
+          <div class="theme-swatches" id="theme-swatches">
+            <div class="swatch" data-theme="default" title="Light" onclick="setTheme('default')"></div>
+            <div class="swatch active" data-theme="theme-sepia" title="Sepia" onclick="setTheme('theme-sepia')"></div>
+            <div class="swatch" data-theme="theme-dark" title="Dark" onclick="setTheme('theme-dark')"></div>
+            <div class="swatch" data-theme="theme-forest" title="Forest" onclick="setTheme('theme-forest')"></div>
+            <div class="swatch" data-theme="theme-midnight" title="Midnight" onclick="setTheme('theme-midnight')"></div>
+          </div>
+        </div>
+        <div>
+          <div class="setting-label">Font</div>
+          <select onchange="setFont(this.value)">
+            <option value="'Crimson Pro', Georgia, serif">Serif</option>
+            <option value="'Outfit', system-ui, sans-serif">Sans</option>
+            <option value="'JetBrains Mono', monospace">Mono</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="setting-label">Text Size</div>
+          <select id="size-select" onchange="setSize(this.value)">
+            <option value="0.95rem">XSmall</option>
+            <option value="1.05rem">Small</option>
+            <option value="1.2rem" selected>Normal</option>
+            <option value="1.35rem">Large</option>
+            <option value="1.55rem">XLarge</option>
+          </select>
+        </div>
+        <div>
+          <div class="setting-label">Line Height</div>
+          <select onchange="setLineHeight(this.value)">
+            <option value="1.5">Compact</option>
+            <option value="1.7">Normal</option>
+            <option value="1.85" selected>Relaxed</option>
+            <option value="2.1">Airy</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="setting-label">Reading Width</div>
+          <select onchange="setWidth(this.value)">
+            <option value="560px">Narrow</option>
+            <option value="680px" selected>Normal</option>
+            <option value="800px">Wide</option>
+            <option value="100%">Full</option>
+          </select>
+        </div>
+        <div>
+          <div class="setting-label">Shortcuts</div>
+          <button class="toolbar-btn" onclick="openHelp()" style="width:100%">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Help (?)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-div"></div>
+    <div class="lib-stat" id="lib-stat">No books loaded</div>
+  </div>
+
+  <div class="sidebar-list">
+    <ul id="book-list"></ul>
+  </div>
+</aside>
+
+<!-- READER -->
+<main id="reader" onclick="handleReaderClick()">
+  <div class="reader-inner" id="reader-inner">
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      </div>
+      <h2>Your library awaits</h2>
+      <p>Open a folder containing .txt files to start reading.</p>
+      <div class="empty-kbd">
+        Click <kbd>Open</kbd> in the sidebar or press <kbd>O</kbd>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // ════════════════════════════════════════
+  // STATE
+  // ════════════════════════════════════════
+  let library = [];
+  let currentBook = null;
+  let deferredInstall = null;
+  let settings = {};
+
+  const STORAGE_KEY = 'txtreader_v1';
+
+  // ════════════════════════════════════════
+  // PERSIST SETTINGS & PROGRESS
+  // ════════════════════════════════════════
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch {}
+  }
+
+  function initSettings() {
+    settings = loadState();
+    if (!settings.progress) settings.progress = {};
+    if (!settings.theme) settings.theme = 'theme-sepia';
+    if (!settings.font) settings.font = "'Crimson Pro', Georgia, serif";
+    if (!settings.size) settings.size = '1.2rem';
+    if (!settings.lineHeight) settings.lineHeight = '1.85';
+    if (!settings.width) settings.width = '680px';
+    if (!settings.sort) settings.sort = 'author';
+
+    // Apply
+    document.body.className = settings.theme;
+    document.documentElement.style.setProperty('--font-reader', settings.font);
+    document.documentElement.style.setProperty('--font-size', settings.size);
+    document.documentElement.style.setProperty('--line-height', settings.lineHeight);
+    document.documentElement.style.setProperty('--reading-width', settings.width);
+
+    // Sync selects
+    const sortSel = document.getElementById('sort-select');
+    if (sortSel) sortSel.value = settings.sort;
+
+    const sizeSel = document.getElementById('size-select');
+    if (sizeSel) sizeSel.value = settings.size;
+
+    // Sync swatch
+    document.querySelectorAll('.swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.theme === settings.theme);
+    });
+
+    updateThemeColor();
+  }
+
+  // ════════════════════════════════════════
+  // FOLDER PICKER
+  // ════════════════════════════════════════
+  async function selectFolder() {
+    try {
+      const dirHandle = await window.showDirectoryPicker();
+      const newBooks = [];
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.txt')) {
+          const file = await entry.getFile();
+          const text = await file.text();
+          newBooks.push({ ...parseMetadata(text, entry.name), content: text });
+        }
+      }
+      library = newBooks;
+      renderList();
+      if (library.length > 0) {
+        showToast(`Loaded ${library.length} book${library.length > 1 ? 's' : ''}`);
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') console.warn('Folder error:', err);
+    }
+  }
+
+  function parseMetadata(text, fileName) {
+    const titleMatch = text.match(/Title:\s*(.*)/i);
+    const authorMatch = text.match(/Author:\s*(.*)/i);
+    return {
+      title: titleMatch ? titleMatch[1].trim() : fileName.replace(/\.txt$/i, ''),
+      author: authorMatch ? authorMatch[1].trim() : 'Unknown Author'
+    };
+  }
+
+  // ════════════════════════════════════════
+  // RENDER LIBRARY LIST
+  // ════════════════════════════════════════
+  function renderList() {
+    const list = document.getElementById('book-list');
+    const stat = document.getElementById('lib-stat');
+    const q = document.getElementById('search').value.toLowerCase().trim();
+    const sortBy = document.getElementById('sort-select').value;
+    settings.sort = sortBy;
+    saveState();
+
+    let filtered = library.filter(b =>
+      b.title.toLowerCase().includes(q) ||
+      b.author.toLowerCase().includes(q)
+    );
+
+    filtered.sort((a, b) => a[sortBy].localeCompare(b[sortBy], undefined, { numeric: true, sensitivity: 'base' }));
+
+    stat.textContent = library.length === 0
+      ? 'No books loaded'
+      : `${filtered.length} of ${library.length} book${library.length > 1 ? 's' : ''}`;
+
+    list.innerHTML = '';
+    if (filtered.length === 0 && library.length > 0) {
+      list.innerHTML = '<div class="no-results">No matches found</div>';
+      return;
+    }
+
+    let currentGroup = null;
+    filtered.forEach(book => {
+      const groupName = sortBy === 'author' ? book.author : book.title[0].toUpperCase();
+      if (groupName !== currentGroup) {
+        const hdr = document.createElement('div');
+        hdr.className = 'group-header';
+        hdr.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          ${groupName}`;
+        list.appendChild(hdr);
+        currentGroup = groupName;
+      }
+
+      const pct = settings.progress[book.title] || 0;
+      const li = document.createElement('li');
+      li.className = `book-item ${currentBook && currentBook.title === book.title ? 'active' : ''}`;
+      li.innerHTML = `
+        <span class="book-title">${book.title}</span>
+        <div class="book-meta">
+          <span class="book-author">${book.author}</span>
+          ${pct > 0 ? `<span class="book-progress-badge">${pct}%</span>` : ''}
+        </div>`;
+      li.onclick = () => displayBook(book);
+      list.appendChild(li);
+    });
+  }
+
+  // ════════════════════════════════════════
+  // DISPLAY BOOK
+  // ════════════════════════════════════════
+  function displayBook(book) {
+    currentBook = book;
+    renderList();
+
+    const wordCount = book.content.split(/\s+/).filter(Boolean).length;
+    const readMin = Math.ceil(wordCount / 200);
+
+    let body = book.content
+      .replace(/Title:.*|Author:.*|Source:.*/gi, '')
+      .replace(/(Chapter\s+\d+[:\s—–-]*\w*|PART\s+\w+|EPILOGUE|PROLOGUE|FOREWORD|APPENDIX)/gi,
+        '<span class="chapter-head">$1</span>');
+
+    document.getElementById('reader-inner').innerHTML = `
+      <div class="book-header">
+        <h1>${esc(book.title)}</h1>
+        <p class="byline">by ${esc(book.author)}</p>
+        <div class="book-stats">
+          <span class="stat-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            ${wordCount.toLocaleString()} words
+          </span>
+          <span class="stat-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            ~${readMin} min read
+          </span>
+        </div>
+      </div>
+      <div id="book-body">${body}</div>
+    `;
+
+    const reader = document.getElementById('reader');
+    reader.scrollTop = 0;
+    updateProgress();
+
+    // Restore scroll position if saved
+    const saved = settings.progress[book.title];
+    if (saved && saved > 0) {
+      const target = (reader.scrollHeight - reader.clientHeight) * (saved / 100);
+      setTimeout(() => { reader.scrollTop = target; }, 100);
+    }
+
+    if (window.innerWidth < 768) toggleSidebar(false);
+  }
+
+  function esc(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ════════════════════════════════════════
+  // READING PROGRESS
+  // ════════════════════════════════════════
+  function updateProgress() {
+    const reader = document.getElementById('reader');
+    const bar = document.getElementById('reading-progress');
+    const scrollable = reader.scrollHeight - reader.clientHeight;
+    const pct = scrollable > 0 ? Math.round((reader.scrollTop / scrollable) * 100) : 0;
+    bar.style.width = pct + '%';
+
+    if (currentBook) {
+      settings.progress[currentBook.title] = pct;
+      saveState();
+      // Update badge in list
+      const badges = document.querySelectorAll('.book-item.active .book-progress-badge');
+      badges.forEach(b => { b.textContent = pct + '%'; });
+    }
+  }
+
+  document.getElementById('reader').addEventListener('scroll', updateProgress, { passive: true });
+
+  // ════════════════════════════════════════
+  // SIDEBAR
+  // ════════════════════════════════════════
+  function toggleSidebar(state) {
+    const sidebar = document.getElementById('sidebar');
+    if (typeof state === 'boolean') {
+      sidebar.classList.toggle('hidden', !state);
+    } else {
+      sidebar.classList.toggle('hidden');
+    }
+  }
+
+  function handleReaderClick() {
+    if (window.innerWidth < 768 && !document.getElementById('sidebar').classList.contains('hidden')) {
+      toggleSidebar(false);
+    }
+  }
+
+  // ════════════════════════════════════════
+  // SETTINGS PANEL
+  // ════════════════════════════════════════
+  function toggleSettings() {
+    document.getElementById('settings-panel').classList.toggle('open');
+  }
+
+  function setTheme(theme) {
+    document.body.className = theme;
+    settings.theme = theme;
+    saveState();
+    document.querySelectorAll('.swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.theme === theme);
+    });
+    updateThemeColor();
+  }
+
+  function updateThemeColor() {
+    const colors = {
+      default: '#4f46e5',
+      'theme-dark': '#0d1117',
+      'theme-sepia': '#b45309',
+      'theme-forest': '#1a1f16',
+      'theme-midnight': '#060915'
+    };
+    const meta = document.getElementById('meta-theme');
+    if (meta) meta.content = colors[settings.theme] || '#4f46e5';
+  }
+
+  function setFont(val) {
+    document.documentElement.style.setProperty('--font-reader', val);
+    settings.font = val;
+    saveState();
+  }
+
+  function setSize(val) {
+    document.documentElement.style.setProperty('--font-size', val);
+    settings.size = val;
+    saveState();
+  }
+
+  function setLineHeight(val) {
+    document.documentElement.style.setProperty('--line-height', val);
+    settings.lineHeight = val;
+    saveState();
+  }
+
+  function setWidth(val) {
+    document.documentElement.style.setProperty('--reading-width', val);
+    settings.width = val;
+    saveState();
+  }
+
+  // ════════════════════════════════════════
+  // SEARCH
+  // ════════════════════════════════════════
+  function onSearch(input) {
+    document.getElementById('search-clear').style.display = input.value ? 'block' : 'none';
+    renderList();
+  }
+
+  function clearSearch() {
+    const s = document.getElementById('search');
+    s.value = '';
+    document.getElementById('search-clear').style.display = 'none';
+    s.focus();
+    renderList();
+  }
+
+  // ════════════════════════════════════════
+  // KEYBOARD SHORTCUTS
+  // ════════════════════════════════════════
+  document.addEventListener('keydown', e => {
+    const inInput = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT';
+
+    if (e.key === '?' && !inInput) { openHelp(); return; }
+    if (e.key === 'Escape') { closeHelp(); return; }
+    if (inInput) return;
+
+    if (e.key === 'b' || e.key === 'B') { toggleSidebar(); }
+    if (e.key === 'o' || e.key === 'O') { selectFolder(); }
+    if (e.key === '/') {
+      e.preventDefault();
+      document.getElementById('search').focus();
+    }
+    if (e.key === '+' || e.key === '=') {
+      changeSizeStep(1);
+    }
+    if (e.key === '-') {
+      changeSizeStep(-1);
+    }
+  });
+
+  function changeSizeStep(dir) {
+    const sizes = ['0.95rem','1.05rem','1.2rem','1.35rem','1.55rem'];
+    const sel = document.getElementById('size-select');
+    const idx = sizes.indexOf(settings.size || '1.2rem');
+    const next = Math.max(0, Math.min(sizes.length - 1, idx + dir));
+    setSize(sizes[next]);
+    if (sel) sel.value = sizes[next];
+    showToast('Text: ' + ['XSmall','Small','Normal','Large','XLarge'][next]);
+  }
+
+  function openHelp() { document.getElementById('help-overlay').classList.add('show'); }
+  function closeHelp() { document.getElementById('help-overlay').classList.remove('show'); }
+  document.getElementById('help-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('help-overlay')) closeHelp();
+  });
+
+  // ════════════════════════════════════════
+  // TOAST
+  // ════════════════════════════════════════
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ════════════════════════════════════════
+  // PWA / SERVICE WORKER
+  // ════════════════════════════════════════
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstall = e;
+    const banner = document.getElementById('install-banner');
+    setTimeout(() => banner.classList.add('show'), 3000);
+  });
+
+  function installPWA() {
+    if (!deferredInstall) return;
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(() => {
+      deferredInstall = null;
+      dismissInstall();
+    });
+  }
+
+  function dismissInstall() {
+    document.getElementById('install-banner').classList.remove('show');
+  }
+
+  window.addEventListener('appinstalled', () => {
+    showToast('App installed! ✓');
+    dismissInstall();
+  });
+
+  // ════════════════════════════════════════
+  // INIT
+  // ════════════════════════════════════════
+  initSettings();
+</script>
+</body>
+</html>
